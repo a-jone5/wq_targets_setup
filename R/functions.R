@@ -1,10 +1,11 @@
-library(dplyr)
-library(lubridate)
-library(ddspWQ)
-library(tidyr)
-library(ggplot2)
+# library(dplyr)
+# library(lubridate)
+# library(ddspWQ)
+# library(tidyr)
+# library(readr)
+# library(ggplot2)
 
-## name this raw_dat
+## get data from api using ddspWQ
 
 pull_api <- function(site){
   
@@ -12,9 +13,9 @@ pull_api <- function(site){
   
 }
 
-## name this tidy_bod
+## tidy the data
 
-tidy_dat_bod <- function(raw_dat){
+tidy <- function(raw_dat){
   
   raw_dat %>% 
     rename("urn" = sample.samplingPoint.notation,
@@ -35,29 +36,52 @@ tidy_dat_bod <- function(raw_dat){
       index = as.numeric(row.names(.))
     ) %>% 
     filter(det_code == "0111"|det_code == "0135") %>% 
-    select(det_code,date_time,sample_result) %>% 
+    select(det_code,date_time,year,sample_result) %>% 
     pivot_wider(names_from = det_code, values_from = sample_result) %>%
-    rename("bod" = 2,
-           "ss" = 3)
+    rename("bod" = 3,
+           "ss" = 4)
   
 }
 
-## name this fit_bod
+## fit a model - lets look at the reletionship between bod and sus solids 
 
-fit_bod_model <- function(tidy_bod){
+fit_model <- function(tidy_dat){
   
-  lm(bod ~ ss, tidy_bod) %>% 
+  lm(bod ~ ss, tidy_dat) %>% 
     coefficients()
   
 }
 
-## name this plot
+## plot the model 
 
-bod_plot <- function(tidy_bod,fit_bod){
+mod_plotter <- function(tidy_dat,fit_dat){
   
-  ggplot(tidy_bod) +
+  ggplot(tidy_dat) +
     geom_point(aes(x = ss, y = bod)) +
-    geom_abline(intercept = fit_bod[1], slope = fit_bod[2], colour = "blue") +
+    geom_abline(intercept = fit_dat[1], slope = fit_dat[2], colour = "blue") +
     theme_bw()
+  
+}
+
+## plot a time series for the bod
+
+ts_plotter <- function(tidy_dat){
+  
+  year_mean <- tidy_dat %>%
+    group_by(year) %>%
+    summarise(bod_mean = mean(bod),
+              ss_mean = mean(ss))
+  
+  total <- merge(tidy_dat,year_mean, by = "year")
+  
+  
+  plot <- ggplot(total, mapping = aes(x = date_time)) +
+    geom_point(mapping = aes(y = bod), col = "black") +
+    geom_line(mapping = aes(y = bod_mean, group = as.factor(year)), col = "blue", lwd = 2) +
+    scale_y_continuous(name = paste0("BOD (mg/l)")) +
+    scale_x_datetime(name = "Date", breaks = waiver()) +
+    ggtitle(paste0("BOD_ts_plot")) +
+    theme_bw()
+  
   
 }

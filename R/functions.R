@@ -43,7 +43,7 @@ tidy <- function(raw_dat){
   
 }
 
-## fit a model - lets look at the reletionship between bod and sus solids 
+## fit a model - lets look at the relationship between bod and sus solids 
 
 fit_model <- function(tidy_dat){
   

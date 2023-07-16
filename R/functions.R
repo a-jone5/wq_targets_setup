@@ -35,11 +35,11 @@ tidy <- function(raw_dat){
       sample_day = wday(date_time, label = TRUE, abbr = FALSE),
       index = as.numeric(row.names(.))
     ) %>% 
-    filter(det_code == "0111"|det_code == "0135") %>% 
+    filter(det_code == "0085"|det_code == "0135") %>% 
     select(det_code,date_time,year,sample_result) %>% 
     pivot_wider(names_from = det_code, values_from = sample_result) %>%
-    rename("bod" = 3,
-           "ss" = 4)
+    rename("bod" = `0085`,
+           "ss" = `0135`)
   
 }
 
@@ -75,7 +75,7 @@ ts_plotter <- function(tidy_dat){
   total <- merge(tidy_dat,year_mean, by = "year")
   
   
-  plot <- ggplot(total, mapping = aes(x = date_time)) +
+  ggplot(total, mapping = aes(x = date_time)) +
     geom_point(mapping = aes(y = bod), col = "black") +
     geom_line(mapping = aes(y = bod_mean, group = as.factor(year)), col = "blue", lwd = 2) +
     scale_y_continuous(name = paste0("BOD (mg/l)")) +
